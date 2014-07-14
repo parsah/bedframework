@@ -3,9 +3,9 @@ Enables parsing of all user-provided input files, namely the configuration
 file and all accompanying BED files.
 '''
 
+import numpy
 from xml.etree import ElementTree
 from src.model import BEDFile
-from pandas import DataFrame
 from pandas import read_table
 
 
@@ -37,13 +37,26 @@ def parse_abstract_bed(f):
     columns are saved.
     @param f: BED file.
     '''
+    df = read_table(f, header=None, sep='\t')  # BED files have no header
+    return df
 
 
 def parse_vectorized_bed(f):
     '''
     Parses a BED file whereby the last column is exclusively dedicated to
     referencing a vector of values. Such a vector may reference conservation
-    scores or gene-expression signals per base of the BED entry.
+    scores or gene-expression signals per base of the BED  Thus, due to the
+    granularity of this vector, addition computation is required.
     @param f: BED file.
     '''
-    pass
+    df = parse_abstract_bed(f)  # vectorized BEDs extend abstract BEDs
+    vector_data = df[df.shape[1] - 1].astype('str')  # get last column
+    all_vectors = []
+    for vector in vector_data:
+        #bed_len = int(df.iloc[rownum][2] - df.iloc[rownum][1])
+        vector = [float(i) if i != 'n/a' else 0 for i in vector.split(',')]
+        vector[vector == 'nan'] = 0
+        all_vectors.append(vector)
+    df = df.drop(df.shape[1] - 1, axis=1)
+    df[df.shape[1]] = all_vectors  # add vectors as final column
+    return df

@@ -13,6 +13,7 @@ class BEDFile():
         self._tissue_name = None  # tissue BED file references
         self._tissue_class = None  # magnitude of tissue-specificity
         self._bigwigs = []  # BED graph files useful in expression analysis
+        self._vector = []  # vector if BED file is vectorized (optional)
 
     def get_filename(self):
         return self._bedfile
@@ -49,3 +50,9 @@ class BEDFile():
 
     def set_bigwigs(self, x):
         self._bigwigs = x
+
+    def get_vector(self):
+        return self._vector
+
+    def set_vector(self, x):
+        self._vector = x
