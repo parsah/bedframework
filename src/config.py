@@ -3,4 +3,4 @@ System-wide variables that help application runtime.
 '''
 
 
-BWLOCATION = None  # references location of an optional BigWig file.
+GENOMIC_BW = None  # references location of an optional BigWig file.

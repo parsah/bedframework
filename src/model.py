@@ -7,18 +7,24 @@ BED contents.
 
 class BEDFile():
     def __init__(self):
-        self._f = None  # input filename
+        self._bedfile = None  # input filename
+        self._fasta = None  # corresponding FASTA sequences
         self._data = None  # parsed BED contents
         self._tissue_name = None  # tissue BED file references
         self._tissue_class = None  # magnitude of tissue-specificity
-        self._vector = []  # BED vector; present if BED contains base-values
-        self._bedgraphs = []  # BED graph files useful in expression analysis
+        self._bigwigs = []  # BED graph files useful in expression analysis
 
     def get_filename(self):
-        return self._f
+        return self._bedfile
 
     def set_filename(self, f):
-        self._f = f
+        self._bedfile = f
+
+    def get_fasta(self):
+        return self._fasta
+
+    def set_fasta(self, f):
+        self._fasta = f
 
     def get_data(self):
         return self._data
@@ -38,19 +44,8 @@ class BEDFile():
     def set_tissue_class(self, x):
         self._tissue_class = x
 
-    def get_vector(self):
-        return self._vector
+    def get_bigwigs(self):
+        return self._bigwigs
 
-    def set_vector(self, x):
-        self._vector = x
-
-    def get_bedgraphs(self):
-        return self._bedgraphs
-
-    def set_bedgraphs(self, x):
-        self._bedgraphs = x
-
-    def is_vectorized(self):
-        if len(self.get_vector()):
-            return True
-        return False
+    def set_bigwigs(self, x):
+        self._bigwigs = x
