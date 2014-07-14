@@ -3,7 +3,6 @@ Enables parsing of all user-provided input files, namely the configuration
 file and all accompanying BED files.
 '''
 
-import numpy
 from xml.etree import ElementTree
 from src.model import BEDFile
 from pandas import read_table
@@ -15,9 +14,10 @@ def parse_config(xml):
     @param f: BED file.
     @return: list of objects of type BEDfile.
     '''
-    global GENOMIC_BW
+    global GENOMIC_BW, GENOMIC_BED
     tree = ElementTree.parse(xml)
     GENOMIC_BW = tree.find('genomebw').text  # genomic bigwig file
+    GENOMIC_BED = tree.find('genomebed').text  # genomic features as BED file
     bed_files = []  # store all BED files
     for elem in tree.iter('bed'):
         bf = BEDFile()
