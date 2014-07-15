@@ -4,7 +4,7 @@ file and all accompanying BED files.
 '''
 
 from xml.etree import ElementTree
-from pandas import read_table
+from pandas import DataFrame, read_table
 
 
 def parse_config(xml):
@@ -29,7 +29,11 @@ def parse_abstract_bed(f):
     @param f: BED file.
     '''
     df = read_table(f, header=None, sep='\t')  # BED files have no header
-    return df
+    data = DataFrame(data=df.ix[:, 0: 2])  # annotate the data component
+    data.columns = ['Chr', 'Start', 'End']
+    data['Length'] = data['End'] - data['Start']
+    other = df.ix[:, 3: df.shape[1] - 1]  # all other columns, if available
+    return (data, other)
 
 
 def parse_vectorized_bed(f):
@@ -40,13 +44,12 @@ def parse_vectorized_bed(f):
     granularity of this vector, addition computation is required.
     @param f: BED file.
     '''
-    df = read_table(f, header=None, sep='\t')  # BED files have no header
-    vector_data = df[df.shape[1] - 1].astype('str')  # get last column
+    df, other = parse_abstract_bed(f)  # vectors are the last column (other)
+    vector_data = other[other.columns[-1]].astype('str')  # get last column
     all_vectors = []
     for vector in vector_data:
         vector = [float(i) if i != 'n/a' else 0 for i in vector.split(',')]
         vector[vector == 'nan'] = 0
         all_vectors.append(vector)
-    df = df.drop(df.shape[1] - 1, axis=1)
-    df[df.shape[1]] = all_vectors  # add vectors as final column
+    df['Vectors'] = all_vectors  # add vectors to the actual data-frame
     return df

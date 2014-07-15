@@ -14,11 +14,11 @@ def compute_distributions(beds):
     length and the respective tissue and class are sent to standard-output.
     @param beds: collection of BEDFile objects.
     '''
-    print('Length , Class , Tissue')  # header
+    print('Length,Class,Tissue')  # header
     for bed in beds:
-        lengths = bed.get_data()[2] - bed.get_data()[1]
+        lengths = bed.get_data()['Length']
         for l in list(lengths):  # iterate over each length, write properties
-            print(l, ',', bed.get_class(), ',', bed.get_tissue())
+            print(str(l) + ',' + bed.get_class() + ',' + bed.get_tissue())
 
 if __name__ == '__main__':
     try:

@@ -6,7 +6,8 @@ import itertools
 import numpy
 from src import parser
 from src.model import BEDFileFactory
-from pandas import DataFrame
+from src.config import TISSUE_SPEC, UBIQUITOUS
+from pandas import concat
 from scipy.stats import ranksums
 
 
@@ -20,17 +21,12 @@ def wilcox_test(x, y):
 
 
 def compute_bed_similarity(beds):
-    df = DataFrame()
-    for bed in beds:
-        d = {'Length': bed.get_data()[2] - bed.get_data()[1],
-             'Tissue': bed.get_tissue(), 'Class': bed.get_class(),
-             'Vectors': bed.get_data()[bed.get_data().shape[1] - 1]}
-        df = df.append(DataFrame(d))  # add object to centralized data-frame
+    df = concat([bed.get_data() for bed in beds])  # add to main data-frame
     lengths = sorted([int(i) for i in set(df['Length']) if i % 100 == 0])
     tissues = [i for i in set(df['Tissue'])]
-    ts = df[df['Class'] == 'Tissue-Specific']
-    ub = df[df['Class'] == 'Ubiquitous']
-    print('Tissue , Ubiquitous , Tissue.Specific , PValue')
+    ts = df[df['Class'] == TISSUE_SPEC]
+    ub = df[df['Class'] == UBIQUITOUS]
+    print('Tissue,Ubiquitous,Tissue-Specific,Pvalue')
     for tissue in tissues:
         for len_ts in lengths:  # filter the respective data-frames
             for len_ub in lengths:  # filter the respective data-frames
@@ -38,7 +34,8 @@ def compute_bed_similarity(beds):
                 x = list(itertools.chain.from_iterable(list(x['Vectors'])))
                 y = ub[(ub['Length'] == len_ub) & (ub['Tissue'] == tissue)]
                 y = list(itertools.chain.from_iterable(list(y['Vectors'])))
-                print(tissue, ',', len_ts, ',', len_ub, ',', wilcox_test(x, y))
+                print(tissue + ',' + str(len_ts) + ',' + str(len_ub) + ',' +
+                      str(wilcox_test(x, y)))
 
 if __name__ == '__main__':
     try:

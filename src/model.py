@@ -36,6 +36,8 @@ class BEDFileFactory():
             bf.set_data(parser.parse_abstract_bed(bf.get_filename()))
         else:
             bf.set_data(parser.parse_vectorized_bed(bf.get_filename()))
+        bf.get_data()['Tissue'] = bf.get_tissue()  # add information to BED
+        bf.get_data()['Class'] = bf.get_class()
         return bf
 
     def get_element(self):
