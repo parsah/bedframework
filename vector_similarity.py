@@ -3,20 +3,29 @@
 
 import argparse
 import itertools
+import numpy
 from src import parser
+from src.model import BEDFileFactory
 from pandas import DataFrame
 from scipy.stats import ranksums
+
+
+def wilcox_test(x, y):
+    pval = ranksums(x, y)[-1].astype('float64')
+    if numpy.isnan(pval):
+        pval = 1.0
+    if pval == 0.0:
+        pval = numpy.finfo(numpy.float64).tiny
+    return pval
 
 
 def compute_bed_similarity(beds):
     df = DataFrame()
     for bed in beds:
-        bed_df = parser.parse_vectorized_bed(bed.get_filename())
-        d = {'Length': bed_df[2] - bed_df[1], 'Tissue': bed.get_tissue_name(),
-             'Class': bed.get_tissue_class(),
-             'Vectors': bed_df[bed_df.shape[1] - 1]}
+        d = {'Length': bed.get_data()[2] - bed.get_data()[1],
+             'Tissue': bed.get_tissue(), 'Class': bed.get_class(),
+             'Vectors': bed.get_data()[bed.get_data().shape[1] - 1]}
         df = df.append(DataFrame(d))  # add object to centralized data-frame
-
     lengths = sorted([int(i) for i in set(df['Length']) if i % 100 == 0])
     tissues = [i for i in set(df['Tissue'])]
     ts = df[df['Class'] == 'Tissue-Specific']
@@ -29,8 +38,7 @@ def compute_bed_similarity(beds):
                 x = list(itertools.chain.from_iterable(list(x['Vectors'])))
                 y = ub[(ub['Length'] == len_ub) & (ub['Tissue'] == tissue)]
                 y = list(itertools.chain.from_iterable(list(y['Vectors'])))
-                pval = ranksums(x, y)[-1]
-                print(tissue, ',', len_ts, ',', len_ub, ',', pval)
+                print(tissue, ',', len_ts, ',', len_ub, ',', wilcox_test(x, y))
 
 if __name__ == '__main__':
     try:
@@ -38,8 +46,9 @@ if __name__ == '__main__':
         argsparser.add_argument('-in', metavar='XML', required=True,
                             help='XML configuration file [req]')
         args = vars(argsparser.parse_args())  # parse arguments
-        bed_list = parser.parse_config(xml=args['in'])  # parse config
-        compute_bed_similarity(beds=bed_list)
+        elems = parser.parse_config(xml=args['in'])  # parse config
+        beds = [BEDFileFactory(elem).build() for elem in elems]
+        compute_bed_similarity(beds)
     except OSError as e:
         print(e)
     except KeyboardInterrupt:

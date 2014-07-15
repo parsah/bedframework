@@ -7,6 +7,7 @@ element x maps to integer x; for easy plotting on the x-y coordinate plane.
 
 import argparse
 from src import parser
+from src.model import BEDFileFactory
 
 
 def vectorize(beds):
@@ -16,7 +17,7 @@ def vectorize(beds):
     @param beds: collection of BEDFile objects.
     '''
     for bed in beds:
-        df = parser.parse_vectorized_bed(bed.get_filename())
+        print(bed)
         # TODO enumerate through each df vector
 
 if __name__ == '__main__':
@@ -25,7 +26,8 @@ if __name__ == '__main__':
         argsparser.add_argument('-in', metavar='XML', required=True,
                             help='XML configuration file [req]')
         args = vars(argsparser.parse_args())  # parse arguments
-        bed_list = parser.parse_config(xml=args['in'])  # parse config
-        vectorize(beds=bed_list)
+        elems = parser.parse_config(xml=args['in'])  # parse config
+        beds = [BEDFileFactory(elem).build() for elem in elems]
+        vectorize(beds)
     except KeyboardInterrupt:
         print()

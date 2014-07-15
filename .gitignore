@@ -2,4 +2,5 @@
 .project
 *.xml
 *.bed
+*.pyc
 
