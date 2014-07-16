@@ -48,8 +48,11 @@ def parse_vectorized_bed(f):
     vector_data = other[other.columns[-1]].astype('str')  # get last column
     all_vectors = []
     for vector in vector_data:
-        vector = [float(i) if i != 'n/a' else 0 for i in vector.split(',')]
+        vector = [float(i) if i != 'n/a' else 0.0 for i in vector.split(',')]
         vector[vector == 'nan'] = 0
         all_vectors.append(vector)
     df['Vectors'] = all_vectors  # add vectors to the actual data-frame
+    df['Vector_Length'] = [len(vector) for vector in df['Vectors']]
+    df = df[df['Length'] == df['Vector_Length']]  # length must match vector
+    df = df[df['Length'] % 100 == 0]  # only save divisible entries
     return df
