@@ -4,7 +4,7 @@ file and all accompanying BED files.
 '''
 
 from xml.etree import ElementTree
-from pandas import DataFrame, read_table
+from pandas import read_table
 
 
 def as_delim(*args, delim=','):
@@ -25,11 +25,7 @@ def parse_config(xml):
     @return: list of XML objects referencing BEDFile elements.
     '''
 
-    global GENOMIC_BW, GENOMIC_BED, IS_SCALAR
     tree = ElementTree.parse(xml)
-    GENOMIC_BW = tree.find('genomebw').text  # genomic bigwig file
-    GENOMIC_BED = tree.find('genomebed').text  # genomic features as BED file
-    IS_SCALAR = True if tree.find('isscalar').text == 'true' else False
     return list(tree.iter('bed'))
 
 
@@ -42,11 +38,14 @@ def parse_abstract_bed(f):
     '''
 
     df = read_table(f, header=None, sep='\t')  # BED files have no header
-    data = DataFrame(data=df.ix[:, 0: 2])  # annotate the data component
+    data = df[[0, 1, 2]]
     data.columns = ['Chr', 'Start', 'End']
-    data['Length'] = data['End'] - data['Start']
-    other = df.ix[:, 3: df.shape[1] - 1]  # all other columns, if available
-    return (data, other)
+    data['Length'] = data['End'] - data['Start']  # get only core data
+    if df.shape[1] > 3:  # if there are more than 3x columns, pull them out
+        other = df[list(range(3, df.shape[1]))]
+    else:
+        other = None  # otherwise, return nothing
+    return data, other
 
 
 def parse_vectorized_bed(f):

@@ -13,17 +13,13 @@ from pandas import concat
 from src.ioutils import parse_config, as_delim
 from src.model import BEDFileFactory
 
-'''
-Computes the mean and confidence interval for BED entries. In doing so, such
-values can be plotted, whilst appreciating its upper and lower bounds.
-'''
-
 
 def confidence_interval(x, ci=0.95):
     '''
     Computes a confidence interval given a numerical vector.
     @param x: numerical vector.
     @param ci: Confidence interval; default = 0.95
+    @return: tuple given mean, upper, and lower bounds given the vector.
     '''
 
     low_per = 100 * (1 - ci) / 2.
@@ -33,7 +29,7 @@ def confidence_interval(x, ci=0.95):
     return mu, upr, lwr  # return the mean and its respective bounds.
 
 
-def run(args):
+def main(args):
     '''
     Given a list of BEDFile objects, compute their length distribution. Such
     length and the respective tissue and class are sent to standard-output.
@@ -45,8 +41,7 @@ def run(args):
     df = concat([b.get_data() for b in beds])  # merge BEDs into one structure
     combs = itertools.product(*[df['Tissue'].unique(),
                                 df['Length'].unique(), df['Class'].unique()])
-    for comb in combs:  # loop over combinations of tissue, length, and class
-        t, le, c = comb  # tissue, length, and class, respectively.
+    for t, le, c in list(combs):  # loop combinations of tissue, length, class
         mat = np.matrix(df[(df['Length'] == le) & (df['Tissue'] == t) &
                            (df['Class'] == c)]['Vectors'].tolist())
         for num in range(mat.shape[1]):  # iterate over columns, get interval
@@ -61,6 +56,6 @@ if __name__ == '__main__':
         argsparser.add_argument('-conf', metavar='FLOAT', default=0.95,
                             type=float, help='Confidence interval [0.95]')
         args = vars(argsparser.parse_args())  # parse arguments
-        run(args)
+        main(args)
     except KeyboardInterrupt:
         print()

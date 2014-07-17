@@ -5,9 +5,9 @@ BED contents.
 '''
 
 import os
+from ast import literal_eval  # for translating 'True' to boolean True
 from xml.etree.ElementTree import Element
 from src.ioutils import parse_abstract_bed, parse_vectorized_bed
-from src.config import IS_SCALAR
 
 
 class BEDFileFactory():
@@ -27,20 +27,21 @@ class BEDFileFactory():
         @return: object of type BEDFile.
         '''
         bf = BEDFile()
-        bf.set_fasta(self.get_element().find('fasta').text)
-        bf.set_filename(self.get_element().find('file').text)
-        bf.set_class(self.get_element().find('class').text)
-        bf.set_tissue(self.get_element().find('tissue').text)
-        bf.set_bigwigs([i.text for i in self.get_element().iter('bw')])
-        if IS_SCALAR:
-            bf.set_data(parse_abstract_bed(bf.get_filename()))
+        bf.set_fasta(self.element().find('fasta').text)
+        bf.set_filename(self.element().find('file').text)
+        bf.set_class(self.element().find('class').text)
+        bf.set_tissue(self.element().find('tissue').text)
+        bf.set_bigwigs([i.text for i in self.element().iter('bw')])
+        bf.set_is_scalar(literal_eval(self.element().find('is_scalar').text))
+        if bf.is_scalar():  # only save actual BED details; nothing else
+            bf.set_data(parse_abstract_bed(bf.get_filename())[0])
         else:
             bf.set_data(parse_vectorized_bed(bf.get_filename()))
         bf.get_data()['Tissue'] = bf.get_tissue()  # add information to BED
         bf.get_data()['Class'] = bf.get_class()
         return bf
 
-    def get_element(self):
+    def element(self):
         return self._element
 
 
@@ -58,6 +59,7 @@ class BEDFile():
         self._tissue_name = None  # tissue BED file references
         self._tissue_class = None  # magnitude of tissue-specificity
         self._bigwigs = []  # BED graph files useful in expression analysis
+        self._is_scalar = False  # whether the BED file is scalar (default)
 
     def get_filename(self):
         return self._bedfile
@@ -94,6 +96,12 @@ class BEDFile():
 
     def set_bigwigs(self, x):
         self._bigwigs = x
+
+    def set_is_scalar(self, x):
+        self._is_scalar = x
+
+    def is_scalar(self):
+        return self._is_scalar
 
     def __repr__(self):
         name = os.path.basename(self.get_filename())  # stringify object
