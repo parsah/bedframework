@@ -5,7 +5,6 @@ possible using the BEDtools package.
 '''
 
 import argparse
-from src import parser
 
 
 def closest():

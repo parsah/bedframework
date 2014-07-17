@@ -4,21 +4,22 @@ tissue-class.
 '''
 
 import argparse
-from src import parser
+from src.ioutils import parse_config, as_delim
 from src.model import BEDFileFactory
 
 
-def compute_distributions(beds):
+def run(args):
     '''
     Given a list of BEDFile objects, compute their length distribution. Such
     length and the respective tissue and class are sent to standard-output.
-    @param beds: collection of BEDFile objects.
+    @param args: dictionary of command-line arguments.
     '''
-    print('Length,Class,Tissue')  # header
+
+    print(as_delim('Length', 'Class', 'Tissue'))  # header
+    beds = [BEDFileFactory(elem).build() for elem in parse_config(args['in'])]
     for bed in beds:
-        lengths = bed.get_data()['Length']
-        for l in list(lengths):  # iterate over each length, write properties
-            print(str(l) + ',' + bed.get_class() + ',' + bed.get_tissue())
+        for l in list(bed.get_data()['Length']):  # iterate over each length
+            print(as_delim(l, bed.get_class(), bed.get_tissue()))
 
 if __name__ == '__main__':
     try:
@@ -26,8 +27,6 @@ if __name__ == '__main__':
         argsparser.add_argument('-in', metavar='XML', required=True,
                             help='XML configuration file [req]')
         args = vars(argsparser.parse_args())  # parse arguments
-        elems = parser.parse_config(xml=args['in'])  # parse config
-        beds = [BEDFileFactory(elem).build() for elem in elems]
-        compute_distributions(beds)
+        run(args)
     except KeyboardInterrupt:
         print()

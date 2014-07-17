@@ -4,7 +4,7 @@
 import argparse
 import itertools
 import numpy
-from src import parser
+from src.ioutils import parse_vectorized_bed
 from src.model import BEDFileFactory
 from src.config import TISSUE_SPEC, UBIQUITOUS
 from pandas import concat
@@ -43,9 +43,9 @@ if __name__ == '__main__':
         argsparser.add_argument('-in', metavar='XML', required=True,
                             help='XML configuration file [req]')
         args = vars(argsparser.parse_args())  # parse arguments
-        elems = parser.parse_config(xml=args['in'])  # parse config
-        beds = [BEDFileFactory(elem).build() for elem in elems]
-        compute_bed_similarity(beds)
+#         elems = parser.parse_config(xml=args['in'])  # parse config
+#         beds = [BEDFileFactory(elem).build() for elem in elems]
+#         compute_bed_similarity(beds)
     except OSError as e:
         print(e)
     except KeyboardInterrupt:

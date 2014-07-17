@@ -7,12 +7,24 @@ from xml.etree import ElementTree
 from pandas import DataFrame, read_table
 
 
+def as_delim(*args, delim=','):
+    '''
+    Helpful function that takes a collection and outputs such elements as a
+    string. Each element is delimited by a user-provided delimiter.
+    @param x: collection populated with objects intent on being delimited.
+    @param delim: character delimited.
+    '''
+
+    return delim.join([str(i) for i in args])
+
+
 def parse_config(xml):
     '''
     Parses the user-provided configuration XML file.
     @param f: BED file.
     @return: list of XML objects referencing BEDFile elements.
     '''
+
     global GENOMIC_BW, GENOMIC_BED, IS_SCALAR
     tree = ElementTree.parse(xml)
     GENOMIC_BW = tree.find('genomebw').text  # genomic bigwig file
@@ -28,6 +40,7 @@ def parse_abstract_bed(f):
     columns are saved.
     @param f: BED file.
     '''
+
     df = read_table(f, header=None, sep='\t')  # BED files have no header
     data = DataFrame(data=df.ix[:, 0: 2])  # annotate the data component
     data.columns = ['Chr', 'Start', 'End']
@@ -44,6 +57,7 @@ def parse_vectorized_bed(f):
     granularity of this vector, addition computation is required.
     @param f: BED file.
     '''
+
     df, other = parse_abstract_bed(f)  # vectors are the last column (other)
     vector_data = other[other.columns[-1]].astype('str')  # get last column
     all_vectors = []

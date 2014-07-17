@@ -6,7 +6,7 @@ BED contents.
 
 import os
 from xml.etree.ElementTree import Element
-from src import parser
+from src.ioutils import parse_abstract_bed, parse_vectorized_bed
 from src.config import IS_SCALAR
 
 
@@ -33,9 +33,9 @@ class BEDFileFactory():
         bf.set_tissue(self.get_element().find('tissue').text)
         bf.set_bigwigs([i.text for i in self.get_element().iter('bw')])
         if IS_SCALAR:
-            bf.set_data(parser.parse_abstract_bed(bf.get_filename()))
+            bf.set_data(parse_abstract_bed(bf.get_filename()))
         else:
-            bf.set_data(parser.parse_vectorized_bed(bf.get_filename()))
+            bf.set_data(parse_vectorized_bed(bf.get_filename()))
         bf.get_data()['Tissue'] = bf.get_tissue()  # add information to BED
         bf.get_data()['Class'] = bf.get_class()
         return bf
