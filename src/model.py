@@ -28,15 +28,15 @@ class BEDFileFactory():
         '''
         bf = BEDFile()
         bf.set_fasta(self.element().find('fasta').text)
-        bf.set_filename(self.element().find('file').text)
+        bf.set_file(self.element().find('file').text)
         bf.set_class(self.element().find('class').text)
         bf.set_tissue(self.element().find('tissue').text)
         bf.set_bigwigs([i.text for i in self.element().iter('bw')])
         bf.set_is_scalar(literal_eval(self.element().find('is_scalar').text))
         if bf.is_scalar():  # only save actual BED details; nothing else
-            bf.set_data(parse_abstract_bed(bf.get_filename())[0])
+            bf.set_data(parse_abstract_bed(bf.get_file()))
         else:
-            bf.set_data(parse_vectorized_bed(bf.get_filename()))
+            bf.set_data(parse_vectorized_bed(bf.get_file()))
         bf.get_data()['Tissue'] = bf.get_tissue()  # add information to BED
         bf.get_data()['Class'] = bf.get_class()
         return bf
@@ -61,10 +61,10 @@ class BEDFile():
         self._bigwigs = []  # BED graph files useful in expression analysis
         self._is_scalar = False  # whether the BED file is scalar (default)
 
-    def get_filename(self):
+    def get_file(self):
         return self._bedfile
 
-    def set_filename(self, f):
+    def set_file(self, f):
         self._bedfile = f
 
     def get_fasta(self):
@@ -104,5 +104,5 @@ class BEDFile():
         return self._is_scalar
 
     def __repr__(self):
-        name = os.path.basename(self.get_filename())  # stringify object
+        name = os.path.basename(self.get_file())  # stringify object
         return name + ' ; ' + self.get_tissue() + ' ; ' + self.get_class()

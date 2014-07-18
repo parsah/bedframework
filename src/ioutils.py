@@ -7,15 +7,15 @@ from xml.etree import ElementTree
 from pandas import read_table
 
 
-def as_delim(*args, delim=','):
-    '''
-    Helpful function that takes a collection and outputs such elements as a
-    string. Each element is delimited by a user-provided delimiter.
-    @param x: collection populated with objects intent on being delimited.
-    @param delim: character delimited.
-    '''
-
-    return delim.join([str(i) for i in args])
+# def as_delim(*args, delim=','):
+#     '''
+#     Helpful function that takes a collection and outputs such elements as a
+#     string. Each element is delimited by a user-provided delimiter.
+#     @param x: collection populated with objects intent on being delimited.
+#     @param delim: character delimited.
+#     '''
+# 
+#     return delim.join([str(i) for i in args])
 
 
 def parse_config(xml):
@@ -38,14 +38,11 @@ def parse_abstract_bed(f):
     '''
 
     df = read_table(f, header=None, sep='\t')  # BED files have no header
-    data = df[[0, 1, 2]]
-    data.columns = ['Chr', 'Start', 'End']
-    data['Length'] = data['End'] - data['Start']  # get only core data
-    if df.shape[1] > 3:  # if there are more than 3x columns, pull them out
-        other = df[list(range(3, df.shape[1]))]
-    else:
-        other = None  # otherwise, return nothing
-    return data, other
+    df.insert(3, None, df[2] - df[1])  # insert BED entry length
+    colnames = ['Chr', 'Start', 'End', 'Length']
+    names = colnames + list(range(df.shape[1] - len(colnames)))
+    df.columns = names
+    return df
 
 
 def parse_vectorized_bed(f):
@@ -57,8 +54,8 @@ def parse_vectorized_bed(f):
     @param f: BED file.
     '''
 
-    df, other = parse_abstract_bed(f)  # vectors are the last column (other)
-    vector_data = other[other.columns[-1]].astype('str')  # get last column
+    df = parse_abstract_bed(f)  # vectors are the last column (other)
+    vector_data = df[df.columns[-1]].astype('str')  # last column is vector
     all_vectors = []
     for vector in vector_data:
         vector = [float(i) if i != 'n/a' else 0.0 for i in vector.split(',')]

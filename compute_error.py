@@ -9,8 +9,9 @@ import argparse
 import numpy as np
 import scipy.stats
 import itertools
+import pandas
 from pandas import concat
-from src.ioutils import parse_config, as_delim
+from src.ioutils import parse_config
 from src.model import BEDFileFactory
 
 
@@ -31,12 +32,14 @@ def confidence_interval(x, ci=0.95):
 
 def main(args):
     '''
-    Given a list of BEDFile objects, compute their length distribution. Such
-    length and the respective tissue and class are sent to standard-output.
+    BED vectors are essentially an i x j matrix, whereby you have i enhancers,
+    each being j elements (bases) long. Thus, a matrix of dimensions i x j
+    can be easily used to model the mean, as well as a corresponding
+    confidence interval for each jth column.
     @param args: dictionary of command-line arguments.
     '''
 
-    print(as_delim('Tissue', 'Class', 'Length', 'Index', 'Mu', 'Upr', 'Lwr'))
+    df_out = pandas.DataFrame()  # create empty data-frame to save results into
     beds = [BEDFileFactory(elm).build() for elm in parse_config(args['in'])]
     df = concat([b.get_data() for b in beds])  # merge BEDs into one structure
     combs = itertools.product(*[df['Tissue'].unique(),
@@ -46,16 +49,21 @@ def main(args):
                            (df['Class'] == c)]['Vectors'].tolist())
         for num in range(mat.shape[1]):  # iterate over columns, get interval
             mu, upr, lwr = confidence_interval(mat[:, num], args['conf'])
-            print(as_delim(t, c, le, num + 1, mu, upr, lwr))
+            df_out = df_out.append({'Tissue': t, 'Class': c, 'Length': le,
+                            'Index': num + 1, 'Mean': mu, 'Upper': upr,
+                            'Lower': lwr}, ignore_index=True)
+    df_out.to_csv(args['out'])
 
 if __name__ == '__main__':
     try:
-        argsparser = argparse.ArgumentParser()
-        argsparser.add_argument('-in', metavar='XML', required=True,
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-in', metavar='XML', required=True,
                             help='XML configuration file [req]')
-        argsparser.add_argument('-conf', metavar='FLOAT', default=0.95,
+        parser.add_argument('-out', metavar='CSV', default='./out.csv',
+                            help='Output filename [./out.csv]')
+        parser.add_argument('-conf', metavar='FLOAT', default=0.95,
                             type=float, help='Confidence interval [0.95]')
-        args = vars(argsparser.parse_args())  # parse arguments
+        args = vars(parser.parse_args())  # parse arguments
         main(args)
     except KeyboardInterrupt:
         print()

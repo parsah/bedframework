@@ -7,7 +7,8 @@ lengths are statistically significant.
 import argparse
 import itertools
 import numpy
-from src.ioutils import parse_config, as_delim
+import pandas
+from src.ioutils import parse_config
 from src.model import BEDFileFactory
 from src.config import TISSUE_SPEC, UBIQUITOUS
 from pandas import concat
@@ -37,11 +38,11 @@ def main(args):
     @param args: dictionary of command-line arguments.
     '''
 
+    df_out = pandas.DataFrame()  # create empty data-frame to save results into
     beds = [BEDFileFactory(elem).build() for elem in parse_config(args['in'])]
     df = concat([bed.get_data() for bed in beds])  # add to main data-frame
     ts = df[df['Class'] == TISSUE_SPEC]
     ub = df[df['Class'] == UBIQUITOUS]
-    print(as_delim('Tissue', 'Ubiquitous', 'Tissue-Specific', 'PValue'))
     combs = itertools.product(*[df['Tissue'].unique(),
                                 df['Length'].unique(), df['Length'].unique()])
     for tissue, len_ts, len_ub in list(combs):  # iterate over tissue, lengths
@@ -49,14 +50,19 @@ def main(args):
         x = list(itertools.chain.from_iterable(list(x['Vectors'])))  # flatten
         y = ub[(ub['Length'] == len_ub) & (ub['Tissue'] == tissue)]
         y = list(itertools.chain.from_iterable(list(y['Vectors'])))  # flatten
-        print(as_delim(tissue, len_ub, len_ts, wilcox_test(x, y)))
+        df_out = df_out.append({'Tissue': bed.get_tissue(), 'Len_Ubiq': len_ub,
+                                'PValue': wilcox_test(x, y),
+                                'Len_Tiss': len_ts}, ignore_index=True)
+    df_out.to_csv(args['out'])  # save output
 
 if __name__ == '__main__':
     try:
-        argsparser = argparse.ArgumentParser()
-        argsparser.add_argument('-in', metavar='XML', required=True,
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-in', metavar='XML', required=True,
                             help='XML configuration file [req]')
-        args = vars(argsparser.parse_args())  # parse arguments
+        parser.add_argument('-out', metavar='CSV', default='./out.csv',
+                            help='Output filename [./out.csv]')
+        args = vars(parser.parse_args())  # parse arguments
         main(args)
     except OSError as e:
         print(e)
