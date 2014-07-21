@@ -3,19 +3,16 @@ Enables parsing of all user-provided input files, namely the configuration
 file and all accompanying BED files.
 '''
 
+import os
 from xml.etree import ElementTree
 from pandas import read_table
 
 
-# def as_delim(*args, delim=','):
-#     '''
-#     Helpful function that takes a collection and outputs such elements as a
-#     string. Each element is delimited by a user-provided delimiter.
-#     @param x: collection populated with objects intent on being delimited.
-#     @param delim: character delimited.
-#     '''
-# 
-#     return delim.join([str(i) for i in args])
+def mkdir(folder):
+    try:
+        os.makedirs(folder)
+    except FileExistsError as e:
+        raise OSError(e)
 
 
 def parse_config(xml):

@@ -6,7 +6,7 @@ element x maps to integer x; for easy plotting on the x-y coordinate plane.
 '''
 
 import argparse
-import numpy as np
+import numpy
 import scipy.stats
 import itertools
 import pandas
@@ -45,7 +45,7 @@ def main(args):
     combs = itertools.product(*[df['Tissue'].unique(),
                                 df['Length'].unique(), df['Class'].unique()])
     for t, le, c in list(combs):  # loop combinations of tissue, length, class
-        mat = np.matrix(df[(df['Length'] == le) & (df['Tissue'] == t) &
+        mat = numpy.matrix(df[(df['Length'] == le) & (df['Tissue'] == t) &
                            (df['Class'] == c)]['Vectors'].tolist())
         for num in range(mat.shape[1]):  # iterate over columns, get interval
             mu, upr, lwr = confidence_interval(mat[:, num], args['conf'])
