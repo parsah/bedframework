@@ -8,7 +8,7 @@ an interval
 
 import argparse
 import numpy
-import os
+from os.path import basename
 from bisect import bisect_left
 from numpy.random import randint
 from src.model import BEDFileFactory
@@ -41,11 +41,10 @@ def shuffle(bed, nums):
 def main(args):
     mkdir(args['dir'])
     beds = [BEDFileFactory(elem).build() for elem in parse_config(args['in'])]
-    for bed in beds:
-        new_bed_data = shuffle(bed, args['num'])
-        new_fname = os.path.basename(bed.get_file()) + '.shuffled'
-        outloc = args['dir'] + '/' + bed.get_tissue() + '-' + new_fname
-        out_handle = open(outloc, 'w')
+    for b in beds:
+        new_bed_data = shuffle(b, args['num'])
+        loc = args['dir'] + '/' + b.get_tissue() + '-' + basename(b.get_file())
+        out_handle = open(loc, 'w')
         out_handle.write(new_bed_data)
         out_handle.flush()
         out_handle.close()
