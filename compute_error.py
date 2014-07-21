@@ -9,7 +9,6 @@ import argparse
 import numpy
 import scipy.stats
 import itertools
-import pandas
 from pandas import concat
 from src.ioutils import parse_config
 from src.model import BEDFileFactory
@@ -39,28 +38,24 @@ def main(args):
     @param args: dictionary of command-line arguments.
     '''
 
-    df_out = pandas.DataFrame()  # create empty data-frame to save results into
     beds = [BEDFileFactory(elm).build() for elm in parse_config(args['in'])]
     df = concat([b.get_data() for b in beds])  # merge BEDs into one structure
     combs = itertools.product(*[df['Tissue'].unique(),
                                 df['Length'].unique(), df['Class'].unique()])
+    print('Tissue,Class,Length,Index,Mean,Upper,Lower')
     for t, le, c in list(combs):  # loop combinations of tissue, length, class
         mat = numpy.matrix(df[(df['Length'] == le) & (df['Tissue'] == t) &
                            (df['Class'] == c)]['Vectors'].tolist())
         for num in range(mat.shape[1]):  # iterate over columns, get interval
             mu, upr, lwr = confidence_interval(mat[:, num], args['conf'])
-            df_out = df_out.append({'Tissue': t, 'Class': c, 'Length': le,
-                            'Index': num + 1, 'Mean': mu, 'Upper': upr,
-                            'Lower': lwr}, ignore_index=True)
-    df_out.to_csv(args['out'])
+            print(t + ',' + c + ',' + str(le) + ',' + str(num + 1) + ',' +\
+                  str(mu) + ',' + str(upr) + ',' + str(lwr))
 
 if __name__ == '__main__':
     try:
         parser = argparse.ArgumentParser()
         parser.add_argument('-in', metavar='XML', required=True,
                             help='XML configuration file [req]')
-        parser.add_argument('-out', metavar='CSV', default='./out.csv',
-                            help='Output filename [./out.csv]')
         parser.add_argument('-conf', metavar='FLOAT', default=0.95,
                             type=float, help='Confidence interval [0.95]')
         args = vars(parser.parse_args())  # parse arguments

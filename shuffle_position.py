@@ -11,7 +11,6 @@ import numpy
 import os
 from bisect import bisect_left
 from numpy.random import randint
-from pandas import DataFrame
 from src.model import BEDFileFactory
 from src.ioutils import parse_config, mkdir
 
@@ -29,16 +28,13 @@ def shuffle(bed, nums):
     start = bed.get_data()['Start']  # get all Start indices
     ranges = numpy.linspace(min(start), max(start), nums)  # fit to intervals
     bed.get_data()['Interval'] = [bisect_left(ranges, pos) for pos in start]
-    new_df = DataFrame()
+    new_df = ''
     for each_int in sorted(bed.get_data()['Interval'].unique()):
         data = bed.get_data()[bed.get_data()['Interval'] == each_int]
         for _, row in data.iterrows():  # per row, compute new start index
             new_start = randint(min(data['Start']) - 1, max(data['Start']))
-            new_df = new_df.append({'Chr': str(row['Chr']),
-                             'Start': str(new_start),
-                             'End': str(new_start + int(row['Length']))},
-                            ignore_index=True)
-    new_df = new_df.reindex_axis(['Chr', 'Start', 'End'], axis=1)
+            new_df += str(row['Chr']) + '\t' + str(new_start) + '\t' +\
+                str(new_start + int(row['Length'])) + '\n'
     return new_df  # return new BED data since it is now shuffled
 
 
@@ -49,7 +45,10 @@ def main(args):
         new_bed_data = shuffle(bed, args['num'])
         new_fname = os.path.basename(bed.get_file()) + '.shuffled'
         outloc = args['dir'] + '/' + bed.get_tissue() + '-' + new_fname
-        new_bed_data.to_csv(outloc, sep='\t', header=False, index=False)
+        out_handle = open(outloc, 'w')
+        out_handle.write(new_bed_data)
+        out_handle.flush()
+        out_handle.close()
 
 
 if __name__ == '__main__':

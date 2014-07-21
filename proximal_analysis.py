@@ -6,7 +6,6 @@ possible using the BEDtools package.
 
 import argparse
 import numpy as np
-from pandas import concat
 from subprocess import Popen, PIPE
 from src.ioutils import parse_config
 from src.model import BEDFileFactory
@@ -61,21 +60,25 @@ def map_signals(b):
 def main(args):
     beds = [BEDFileFactory(elm).build() for elm in parse_config(args['in'])]
     bed_objs = [b for b in beds]  # merge BEDs into one structure
-    all_df = []  # store data-frames of all BEDFile classes
+    print('Chr,Length,Tissue,Class,GeneID,Distance,Signal')  # print header
     for b in bed_objs:
         map_features(b, args['gtf'])
         if args['signals']:  # map signals (BigWig files), if need-be
             map_signals(b)
-        all_df.append(b.get_data())
-    concat(all_df).to_csv(args['out'])  # write concatenated data-frame
+        else:
+            b.get_data()['Signal'] = 'None'  # add invalid values if no signal
+        data = b.get_data()
+        for _, row in data.iterrows():
+            print(row['Chr'] + ',' + str(row['Length']) + ',' +
+                  str(row['Tissue']) + ',' + str(row['Class']) + ',' +
+                  str(row['Gene_ID']) + ',' + str(row['Distance']) + ',' +
+                  str(row['Signal']))
 
 if __name__ == '__main__':
     try:
         parser = argparse.ArgumentParser()
         parser.add_argument('-in', metavar='XML', required=True,
                             help='XML configuration file [req]')
-        parser.add_argument('-out', metavar='CSV', default='./out.csv',
-                            help='Output filename [./out.csv]')
         parser.add_argument('-gtf', metavar='FILE', required=True,
                             help='GTF with gene_id as first attribute [req]')
         parser.add_argument('--signals', action='store_true', default=False,
