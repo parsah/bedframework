@@ -6,6 +6,7 @@ possible using the BEDtools package.
 
 import argparse
 import numpy as np
+from bisect import bisect_left
 from subprocess import Popen, PIPE
 from src.ioutils import parse_config
 from src.model import BEDFileFactory
@@ -33,9 +34,11 @@ def map_features(b, gtf):
         l = l.decode('utf-8').split('\t')
         gene = l[-2].split(';')[0].replace('gene_id', '').replace('"', "")
         genes.append(gene.strip())  # add the entrie's most proximal gene
-        distance.append(l[-1])  # add most proximal distance
+        distance.append(int(l[-1]))  # add most proximal distance
     b.get_data()['Gene_ID'] = genes  # add new columns to the data-structure
     b.get_data()['Distance'] = distance
+    ints = list(range(0, 200000, 10000))  # fit distances to intervals
+    b.get_data()['Interval'] = [bisect_left(ints, pos) for pos in distance]
 
 
 def map_signals(b):
@@ -60,7 +63,7 @@ def map_signals(b):
 def main(args):
     beds = [BEDFileFactory(elm).build() for elm in parse_config(args['in'])]
     bed_objs = [b for b in beds]  # merge BEDs into one structure
-    print('Chr,Length,Tissue,Class,GeneID,Distance,Signal')  # print header
+    print('Chr,Length,Tissue,Class,GeneID,Distance,Interval,Signal')  # header
     for b in bed_objs:
         map_features(b, args['gtf'])
         if args['signals']:  # map signals (BigWig files), if need-be
@@ -69,10 +72,11 @@ def main(args):
             b.get_data()['Signal'] = 'None'  # add invalid values if no signal
         data = b.get_data()
         for _, row in data.iterrows():
-            print(row['Chr'] + ',' + str(row['Length']) + ',' +
-                  str(row['Tissue']) + ',' + str(row['Class']) + ',' +
-                  str(row['Gene_ID']) + ',' + str(row['Distance']) + ',' +
-                  str(row['Signal']))
+            if row['Distance'] >= 0:  # BED entry lacks proximal, i.e. chrX
+                print(row['Chr'] + ',' + str(row['Length']) + ',' +
+                      str(row['Tissue']) + ',' + str(row['Class']) + ',' +
+                      str(row['Gene_ID']) + ',' + str(row['Distance']) + ',' +
+                      str(row['Interval']) + ',' + str(row['Signal']))
 
 if __name__ == '__main__':
     try:
