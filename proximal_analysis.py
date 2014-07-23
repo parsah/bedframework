@@ -12,6 +12,14 @@ from src.ioutils import parse_config
 from src.model import BEDFileFactory
 
 
+def get_gtf_positions(l):
+    return l[3], l[4]
+
+
+def get_bed_positions(l):
+    return l[1], l[2]
+
+
 def map_features(b, gtf):
     '''
     Find the most proximal GTF entry given a BEDFile object. Each BED entry
@@ -26,14 +34,19 @@ def map_features(b, gtf):
 
     hit_start, hit_end, distance = [], [], []
     fname = b.get_file()
-    cmd = 'bedtools closest -d -a ' + fname + ' -b ' + gtf + ' -t first'
+    n_cols = len(open(fname).readline().split('\t'))  # get # columns of BED
+    cmd = 'bedtools closest -io -d -a ' + fname + ' -b ' + gtf + ' -t first'
     out, err = Popen(cmd, shell=True, stdout=PIPE).communicate()
     if err:  # stdout, stderr are outputs; stderr must be None
         raise IOError('Error found following mapping features to BED')
     for l in out.splitlines():
         l = l.decode('utf-8').split('\t')
-        hit_start.append(int(l[-3]))  # append the start and end bases
-        hit_end.append(int(l[-2]))
+        if gtf.endswith('bed'):
+            start, end = get_bed_positions(l[n_cols:])
+        elif gtf.endswith('gtf'):
+            start, end = get_gtf_positions(l[n_cols:])
+        hit_start.append(start)  # append the start and end bases
+        hit_end.append(end)
         distance.append(int(l[-1]))  # add most proximal distance
     b.get_data()['Hit_Start'] = hit_start  # add new columns to data-structure
     b.get_data()['Hit_End'] = hit_end  # add new columns to data-structure
@@ -63,9 +76,9 @@ def map_signals(b):
 def main(args):
     beds = [BEDFileFactory(elm).build() for elm in parse_config(args['in'])]
     bed_objs = [b for b in beds]  # merge BEDs into one structure
-    print('Chr,Length,Tissue,Class,Distance,Interval,Hit_Start,Hit_End,Signal')
+    print('Chr,Len,Start,End,Tissue,Class,Dist,Inter,Hit_Start,Hit_End,Signal')
     for b in bed_objs:
-        map_features(b, args['bed'])
+        map_features(b, args['annot'])
         if args['signals']:  # map signals (BigWig files), if need-be
             map_signals(b)
         else:
@@ -73,8 +86,8 @@ def main(args):
         data = b.get_data()
         for _, row in data.iterrows():
             if row['Distance'] >= 0:  # BED entry lacks proximal, i.e. chrX
-                pass
                 print(row['Chr'] + ',' + str(row['Length']) + ',' +
+                      str(row['Start']) + ',' + str(row['End']) + ',' +
                       str(row['Tissue']) + ',' + str(row['Class']) + ',' +
                       str(row['Distance']) + ',' + str(row['Interval']) + ',' +
                       str(row['Hit_Start']) + ',' + str(row['Hit_End']) + ',' +
@@ -85,8 +98,8 @@ if __name__ == '__main__':
         parser = argparse.ArgumentParser()
         parser.add_argument('-in', metavar='XML', required=True,
                             help='XML configuration file [req]')
-        parser.add_argument('-bed', metavar='FILE', required=True,
-                            help='BED serving as annotations [req]')
+        parser.add_argument('-annot', metavar='FILE', required=True,
+                            help='BED/GTF annotations file [req]')
         parser.add_argument('--signals', action='store_true', default=False,
                             help='Map BED bigwigs signals to features [false]')
         args = vars(parser.parse_args())
