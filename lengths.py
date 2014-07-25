@@ -4,8 +4,10 @@ tissue-class.
 '''
 
 import argparse
-from src.ioutils import parse_config
+import sys
 from src.model import BEDFileFactory
+from src.ioutils import parse_config
+from pandas import concat
 
 
 def main(args):
@@ -15,11 +17,10 @@ def main(args):
     @param args: dictionary of command-line arguments.
     '''
 
-    beds = [BEDFileFactory(elem).build() for elem in parse_config(args['in'])]
-    print('Length,Class,Tissue')
-    for bed in beds:
-        for le in list(bed.get_data()['Length']):  # iterate over each length
-            print(str(le) + ',' + bed.get_class() + ',' + bed.get_tissue())
+    df = concat([BEDFileFactory(e).build().get_data()
+                 for e in parse_config(args['in'])])
+    df[['Length', 'Class', 'Tissue']].to_csv(sys.stdout, index=False)
+
 
 if __name__ == '__main__':
     try:

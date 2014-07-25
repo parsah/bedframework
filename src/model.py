@@ -7,7 +7,8 @@ BED contents.
 import os
 from ast import literal_eval  # for translating 'True' to boolean True
 from xml.etree.ElementTree import Element
-from src.ioutils import parse_abstract_bed, parse_vectorized_bed
+from src import ioutils
+from pandas import concat
 
 
 class BEDFileFactory():
@@ -34,15 +35,19 @@ class BEDFileFactory():
         bf.set_bigwigs([i.text for i in self.element().iter('bw')])
         bf.set_is_scalar(literal_eval(self.element().find('is_scalar').text))
         if bf.is_scalar():  # only save actual BED details; nothing else
-            bf.set_data(parse_abstract_bed(bf.get_file()))
+            bf.set_data(ioutils.parse_abstract_bed(bf.get_file()))
         else:
-            bf.set_data(parse_vectorized_bed(bf.get_file()))
+            bf.set_data(ioutils.parse_vectorized_bed(bf.get_file()))
         bf.get_data()['Tissue'] = bf.get_tissue()  # add information to BED
         bf.get_data()['Class'] = bf.get_class()
         return bf
 
     def element(self):
         return self._element
+
+    @staticmethod
+    def combine(x):
+        return concat([i.get_data() for i in x], ignore_index=True)
 
 
 class BEDFile():

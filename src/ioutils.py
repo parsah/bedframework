@@ -8,6 +8,10 @@ from xml.etree import ElementTree
 from pandas import read_table
 
 
+def exec_function(s):
+    pass
+
+
 def mkdir(folder):
     try:
         os.makedirs(folder)

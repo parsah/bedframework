@@ -8,8 +8,9 @@ element x maps to integer x; for easy plotting on the x-y coordinate plane.
 import argparse
 import numpy
 import scipy.stats
-import itertools
-from pandas import concat
+import sys
+from itertools import product
+from pandas import DataFrame, concat
 from src.ioutils import parse_config
 from src.model import BEDFileFactory
 
@@ -38,18 +39,19 @@ def main(args):
     @param args: dictionary of command-line arguments.
     '''
 
-    beds = [BEDFileFactory(elm).build() for elm in parse_config(args['in'])]
-    df = concat([b.get_data() for b in beds])  # merge BEDs into one structure
-    combs = itertools.product(*[df['Tissue'].unique(),
-                                df['Length'].unique(), df['Class'].unique()])
-    print('Tissue,Class,Length,Index,Mean,Upper,Lower')
+    df = concat([BEDFileFactory(e).build().get_data()
+                 for e in parse_config(args['in'])])
+    combs = product(*[set(df['Tissue']), set(df['Length']), set(df['Class'])])
+    data = DataFrame()
     for t, le, c in list(combs):  # loop combinations of tissue, length, class
         mat = numpy.matrix(df[(df['Length'] == le) & (df['Tissue'] == t) &
                            (df['Class'] == c)]['Vectors'].tolist())
         for num in range(mat.shape[1]):  # iterate over columns, get interval
             mu, upr, lwr = confidence_interval(mat[:, num], args['conf'])
-            print(t + ',' + c + ',' + str(le) + ',' + str(num + 1) + ',' +\
-                  str(mu) + ',' + str(upr) + ',' + str(lwr))
+            data = data.append({'Tissue': t, 'Class': c, 'Length': le,
+                                'Index': num + 1, 'Mu': mu, 'Upr': upr,
+                                'Lwr': lwr}, ignore_index=True)
+    data.to_csv(sys.stdout, index=False)
 
 if __name__ == '__main__':
     try:

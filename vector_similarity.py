@@ -5,12 +5,13 @@ lengths are statistically significant.
 '''
 
 import argparse
-import itertools
 import numpy
+import sys
+from itertools import product, chain
 from src.ioutils import parse_config
 from src.model import BEDFileFactory
 from src.config import TISSUE_SPEC, UBIQUITOUS
-from pandas import concat
+from pandas import concat, DataFrame
 from scipy.stats import ranksums
 
 
@@ -37,20 +38,20 @@ def main(args):
     @param args: dictionary of command-line arguments.
     '''
 
-    print('Tissue,PValue,Length_TissSpec,Length_Ubiq')
-    beds = [BEDFileFactory(elem).build() for elem in parse_config(args['in'])]
-    df = concat([bed.get_data() for bed in beds])  # add to main data-frame
-    ts = df[df['Class'] == TISSUE_SPEC]
-    ub = df[df['Class'] == UBIQUITOUS]
-    combs = itertools.product(*[df['Tissue'].unique(),
+    d = DataFrame()
+    df = concat([BEDFileFactory(elem).build().get_data()
+                 for elem in parse_config(args['in'])])
+    ts, ub = df[df['Class'] == TISSUE_SPEC], df[df['Class'] == UBIQUITOUS]
+    combs = product(*[df['Tissue'].unique(),
                                 df['Length'].unique(), df['Length'].unique()])
-    for tiss, len_ts, len_ub in list(combs):  # iterate over tissue, lengths
-        x = ts[(ts['Length'] == len_ts) & (ts['Tissue'] == tiss)]
-        x = list(itertools.chain.from_iterable(list(x['Vectors'])))  # flatten
-        y = ub[(ub['Length'] == len_ub) & (ub['Tissue'] == tiss)]
-        y = list(itertools.chain.from_iterable(list(y['Vectors'])))  # flatten
-        print(tiss + ',' + str(wilcox_test(x, y)) + ',' +
-              str(len_ts) + ',' + str(len_ub))
+    for t, l_ts, l_ub in list(combs):  # iterate over tissue, lengths
+        x = list(chain.from_iterable(
+            list(ts[(ts['Length'] == l_ts) & (ts['Tissue'] == t)]['Vectors'])))
+        y = list(chain.from_iterable(
+            list(ub[(ub['Length'] == l_ub) & (ub['Tissue'] == t)]['Vectors'])))
+        d = d.append({'Tissue': t, 'PValue': wilcox_test(x, y),
+                      'Length_TS': l_ts, 'Length_UB': l_ub}, ignore_index=True)
+    d.to_csv(sys.stdout, index=False)
 
 if __name__ == '__main__':
     try:
