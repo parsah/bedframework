@@ -4,12 +4,40 @@ file and all accompanying BED files.
 '''
 
 import os
+import random
 from xml.etree import ElementTree
 from pandas import read_table
+from subprocess import Popen, PIPE
+from Bio import SeqIO
 
 
-def exec_function(s):
-    pass
+def exec_closest_app(bed, annot):
+    cmd = 'bedtools closest -io -d -a ' + bed + ' -b ' + annot + ' -t first'
+    out, err = Popen(cmd, shell=True, stdout=PIPE).communicate()
+    if err:
+        raise IOError('Exception raised running bedtools')
+    return out
+
+
+def exec_average_app(chrom, start, end, bigwig):
+    cmd = 'echo ' + chrom + ' ' + str(start) + ' ' + str(end) +\
+             ' 1 | bigWigAverageOverBed ' + bigwig + ' stdin stdout'
+    out, err = Popen(cmd, shell=True, stdout=PIPE).communicate()
+    if err:  # stdout, stderr are outputs; stderr must be None
+        raise IOError('Error found following mapping features to BED')
+    return out
+
+
+def build_random_bed(fasta, n, l=400):
+    fname = './bedfile.bed'
+    out = open(fname, 'w')
+    records = list(SeqIO.parse(open(fasta), 'fasta'))
+    for _ in range(n):
+        record = random.choice(records)
+        chrm = record.description
+        start = random.randint(0, len(record.seq))
+        out.write(chrm + '\t' + str(start) + '\t' + str(start + l) + '\n')
+    return fname
 
 
 def mkdir(folder):
