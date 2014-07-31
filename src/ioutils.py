@@ -20,6 +20,8 @@ def exec_closest_app(bed, annot):
 
 
 def exec_average_app(chrom, start, end, bigwig):
+    if not os.path.exists(bigwig):  # signaling is sought but file is invalid
+        raise IOError(bigwig + ' is an invalid BigWig file.')
     cmd = 'echo ' + chrom + ' ' + str(start) + ' ' + str(end) +\
              ' 1 | bigWigAverageOverBed ' + bigwig + ' stdin stdout'
     out, err = Popen(cmd, shell=True, stdout=PIPE).communicate()

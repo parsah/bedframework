@@ -65,7 +65,7 @@ def map_features(b, annot):
                 [bleft(range(0, int(2e5), int(1e4)), p) for p in ds]
 
 
-def map_signals(b):
+def map_signals(b, annot):
     '''
     Maps BigWig files onto the user-provided BED file. In many cases, multiple
     BigWig files are provided; each is iteratively mapped to each BED entry
@@ -77,7 +77,10 @@ def map_signals(b):
     for _, row in b.get_data().iterrows():  # row-number, row, respectively
         reps = []  # store bigwig replicate-averages across bigwig files
         for bw in b.get_bigwigs():  # compute BED average given bigwig
-            out = exec_average_app(row['Chr'], row['Start'], row['End'], bw)
+            out = exec_average_app(row['Chr'],
+                                   row['Hit_Start-' + os.path.basename(annot)],
+                                   row['Hit_End-' + os.path.basename(annot)],
+                                   bw)
             reps.append(float(out.decode('utf-8').strip().split('\t')[-1]))
         signal.append(np.mean(reps))  # append the mean
     b.get_data()['Signal'] = signal
@@ -99,7 +102,7 @@ def main(args):
     for b in beds:  # otherwise, work with all other BED files.
         map_features(b, args['annot'])
         if args['signals']:  # map signals (BigWig files), if need-be
-            map_signals(b)
+            map_signals(b, args['annot'])
         df = df.append(b.get_data(), ignore_index=True)
     df.to_csv(sys.stdout, index=False)
 
@@ -116,3 +119,5 @@ if __name__ == '__main__':
         main(args)
     except KeyboardInterrupt:
         print()
+    except IOError as e:
+        print(e)

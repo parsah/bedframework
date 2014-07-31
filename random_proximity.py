@@ -31,7 +31,7 @@ def main(args):
     map_features(bed_ub, bed_ts.get_file())  # map TS BEDs onto ubiquitous
     randbed = build_random_bed(args['fasta'], bed_ts.get_data().shape[0])
     map_features(bed_ub, randbed)
-    bed_ub.get_data().to_csv(sys.stdout)
+    bed_ub.get_data().to_csv(sys.stdout, index=False)
 
 if __name__ == '__main__':
     try:
