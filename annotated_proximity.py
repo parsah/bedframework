@@ -15,10 +15,22 @@ from src.model import BEDFileFactory
 
 
 def get_gtf_positions(l):
+    '''
+    List-representation of a strong produced from a GTF file.
+    @param l: List object
+    @return: tuple containing start and end indices of the provided list.
+    '''
+
     return l[3], l[4]
 
 
 def get_bed_positions(l):
+    '''
+    List-representation of a strong produced from a BED file.
+    @param l: List object
+    @return: tuple containing start and end indices of the provided list.
+    '''
+
     return l[1], l[2]
 
 
@@ -55,7 +67,12 @@ def map_features(b, annot):
 
 def map_signals(b):
     '''
+    Maps BigWig files onto the user-provided BED file. In many cases, multiple
+    BigWig files are provided; each is iteratively mapped to each BED entry
+    and the mean bigwig value is derived.
+    @param b: BEDFile object
     '''
+
     signal = []
     for _, row in b.get_data().iterrows():  # row-number, row, respectively
         reps = []  # store bigwig replicate-averages across bigwig files
@@ -67,6 +84,16 @@ def map_signals(b):
 
 
 def main(args):
+    '''
+    Given a list of BEDFile objects, compute the distance of each BEDFile
+    object-entry to its most proximal feature as defined by -annot. If any
+    BEDFile object references a set of BigWig files, subsequently map the
+    proximal features start and end onto these bigwig files. Doing so
+    facilitates derivation of a mean value that helps infer a signal for the
+    proximal annotation entry.
+    @param args: dictionary of command-line arguments.
+    '''
+
     beds = [BEDFileFactory(elm).build() for elm in parse_config(args['in'])]
     df = DataFrame()
     for b in beds:  # otherwise, work with all other BED files.

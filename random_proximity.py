@@ -10,6 +10,16 @@ from annotated_proximity import map_features
 
 def main(args):
     '''
+    Traditionally, a GTF or BED file references known annotations. If a known
+    annotation file is not present, randomly-selected genomic sequences can
+    be selected to serve as a proxy for a BED file. Such logic, however,
+    requires a single ubiquitous and tissue-specific BED file. Let n represent
+    the number of tissue-specific BED entries. A set of n random sequences
+    are selected from a user-provided FASTA file (preferably genomic) and their
+    coordinates are subsequently used to build a BED file made of n entries.
+    Thus, this new BED file serves as a guise for understanding whether
+    known tissue-specific sequences have similar proximal landscapes to
+    randomly-selected genomic sequences.
     @param args: dictionary of command-line arguments.
     '''
 

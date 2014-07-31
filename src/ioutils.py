@@ -29,6 +29,15 @@ def exec_average_app(chrom, start, end, bigwig):
 
 
 def build_random_bed(fasta, n, l=400):
+    '''
+    Create a new BED file that is build solely given randomly-selected
+    genomic coordinates from a FASTA file. The corresponding BED filename
+    will be bedfile.bed, and will be saved in the current working directory.
+    @param fasta: FASTA filename.
+    @param n: Number of randomly-selected BED entries to make.
+    @param l: Length of each randomly-selected genomic sequence.
+    '''
+
     fname = './bedfile.bed'
     out = open(fname, 'w')
     records = list(SeqIO.parse(open(fasta), 'fasta'))
